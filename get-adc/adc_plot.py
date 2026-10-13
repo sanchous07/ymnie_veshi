@@ -4,7 +4,7 @@ def plot_voltage_vs_time(time,voltage,max_voltage):
     plt.plot(time,voltage)
     plt.ylabel("voltage")
     plt.xlabel('time')
-    plt.xlim(0,3.0)
+    plt.xlim(0,15)
     plt.ylim(0,3.5)
     plt.grid()
     plt.show()
