@@ -8,8 +8,9 @@ duration=15.0
 compare_time=0.0001
 d_range=3.3
 
+r2r=r2r_adc.R2R_ADC(d_range, compare_time)
+
 try:
-    r2r=r2r_adc.R2R_ADC(d_range, compare_time)
     t0=time.time()
     while time.time()-t0<duration:
             voltage=r2r.get_sc_voltage()
