@@ -1,0 +1,2 @@
+Relative humidity = 36.4%
+Temperature = 24.0 C
