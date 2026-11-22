@@ -40,19 +40,16 @@ def find_tau_1(a, b):
             best_error = error
     return best_tau * 0.004
 
-def meaning(a, n=50):
-    b = []
-    for i in range(len(a)-n):
-        b.append(sum(a[i:i+n])/n)
-    return b
-
+plotsPath = "../plots/"
 L = 1.158
 t, rh = 24.0, 36.4
+air_sccuess = [12,13,14,15,16]
+breath_success = [1,2,3]
 
 #t, rh = 21.9, 34
 
-co2, speedRoom = s.speedOfSound(t, s.h2oFraction(t, rh), 5)
-co2, speedWet = s.speedOfSound(t, s.h2oFraction(t, 100), 5)
+co2, speedRoom = s.speedOfSound(t, s.h2oFraction(t, rh), 10)
+co2, speedWet = s.speedOfSound(t, s.h2oFraction(t, 100), 10)
 
 fitRoom = np.polyfit(speedRoom, co2, 1)
 fitWet = np.polyfit(speedWet, co2, 1)
@@ -66,33 +63,33 @@ plt.ylabel("Скорость звука, м/с")
 plt.grid()
 plt.legend()
 
-for i in range(1,17):
-    dataPath = "data/"
+tauAir = np.array([])
+
+for i in air_sccuess:
+    dataPath = "../data/"
     name_air = f"air{i}/data"
-    #name_breath = "breath1/data"
 
     mic_air_1 = np.loadtxt(dataPath + name_air + "_0.txt")[:2000]
     mic_air_2 = np.loadtxt(dataPath + name_air + "_1.txt")[:2000]
-    #mic_breath_1 = np.loadtxt(dataPath + name_breath + "_0.txt")[:2000]
-    #mic_breath_2 = np.loadtxt(dataPath + name_breath + "_1.txt")[:2000]
 
     tau_air = find_tau_1(mic_air_1, mic_air_2)
-    #tau_breath = find_tau_1(mic_breath_1, mic_breath_2)
 
-    tauAir = np.array([tau_air])
-    #tauBreath = np.array([tau_breath])
+    tauAir = np.append(tauAir, [tau_air])
 
-    cAir = L / (np.mean(tauAir) / 1000)
-    #cBreath = L / (np.mean(tauBreath) / 1000)
+cAir = L / (np.mean(tauAir) / 1000)
 
-    co2Air = np.polyval(fitRoom, cAir)
-    #co2Breath = np.polyval(fitWet, cBreath)
+co2Air = np.polyval(fitRoom, cAir)
+Air_delta = np.std(tauAir)
 
-    print(f"Измерение {i}:","Воздух: c = %.1f м/с, CO2 = %.1f %%" % (cAir, co2Air))
-    #print("Выдох:  c = %.1f м/с, CO2 = %.1f %%" % (cBreath, co2Breath))
+cAir_delta = cAir * Air_delta / np.mean(tauAir) + 1.3
+co2Air_delta = abs(np.polyval(fitRoom, cAir+cAir_delta)-np.polyval(fitRoom, cAir-cAir_delta))/2
 
-for j in range(1,4):
-    dataPath = "data/"
+print(f"Воздух: c = (%.1f+-%.1f) м/с, CO2 = (%.1f+-%.1f) %%" % (cAir, cAir_delta, co2Air, co2Air_delta))
+
+tauBreath = np.array([])
+
+for j in breath_success:
+    dataPath = "../data/"
     name_breath = f"breath{j}/data"
 
     mic_breath_1 = np.loadtxt(dataPath + name_breath + "_0.txt")[:2000]
@@ -100,10 +97,20 @@ for j in range(1,4):
 
     tau_breath = find_tau_1(mic_breath_1, mic_breath_2)
 
-    tauBreath = np.array([tau_breath])
+    tauBreath = np.append(tauBreath, [tau_breath])
 
-    cBreath = L / (np.mean(tauBreath) / 1000)
+cBreath = L / (np.mean(tauBreath) / 1000)
 
-    co2Breath = np.polyval(fitWet, cBreath)
+co2Breath = np.polyval(fitWet, cBreath)
+Breath_delta = np.std(tauBreath)
 
-    print("Выдох:  c = %.1f м/с, CO2 = %.1f %%" % (cBreath, co2Breath))
+cBreath_delta = cBreath * Breath_delta / np.mean(tauBreath) + 1.3
+co2Breath_delta = abs(np.polyval(fitRoom, cBreath+cBreath_delta)-np.polyval(fitRoom, cBreath-cBreath_delta))/2
+
+print("Выдох:  c = (%.1f+-%.1f) м/с, CO2 = (%.1f+-%.1f) %%" % (cBreath, cBreath_delta, co2Breath, co2Breath_delta))
+
+plt.plot(co2Air, cAir, "*", markersize=14, label="Воздух: %.1f м/с, %.1f %%" % (cAir, co2Air))
+plt.plot(co2Breath, cBreath, "*", markersize=14, label="Выдох: %.1f м/с, %.1f %%" % (cBreath, co2Breath))
+plt.legend()
+plt.savefig(plotsPath + "speed-of-sound.png")
+plt.show()
