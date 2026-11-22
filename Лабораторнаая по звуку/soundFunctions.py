@@ -19,20 +19,21 @@ X_N2, X_O2, X_AR = 0.7809, 0.2098, 0.0093
 
 
 def h2oFraction(temperature, rh):
-    # temperature — температура, °C; rh — относительная влажность, %
-    # Возвращает мольную долю паров воды. Шаг 1 в п4.5
-    h2oX = 0
+    pw0 = np.interp(temperature, TEMPS, PW0)   # давление насыщенных паров, Па
+    h2oX = rh / 100 * pw0 / PA                 # мольная доля паров воды
     return h2oX
 
 
 def speedOfSound(temperature, h2oX, co2Max):
-    # temperature — температура, °C; h2oX — мольная доля паров воды; co2Max — наибольшая доля CO2, %
-    # Возвращает массив долей CO2, %, и массив скоростей звука, м/с. Шаг 2 в п4.5:
-    # а) температура в кельвинах и массив долей CO2
-    # б) доли газов во влажном воздухе
-    # в) молярная масса смеси
-    # г) теплоёмкости смеси
-    # д) скорость звука
-    co2X = []
-    soundSpeed = []
-    return co2X, soundSpeed
+    T = temperature + 273.15
+    co2 = np.linspace(0, co2Max / 100, 51)
+    k = 1 - h2oX
+    xN2 = X_N2 * k
+    xO2 = (X_O2 - co2) * k
+    xAr = X_AR * k
+    xCO2 = co2 * k
+    M = M_N2 * xN2 + M_O2 * xO2 + M_AR * xAr + M_CO2 * xCO2 + M_H2O * h2oX
+    Cv = (I_N2 * xN2 + I_O2 * xO2 + I_AR * xAr + I_CO2 * xCO2 + I_H2O * h2oX) / 2 * R
+    Cp = Cv + R
+    soundSpeed = np.sqrt(Cp / Cv * R * T / M)
+    return co2 * 100, soundSpeed
